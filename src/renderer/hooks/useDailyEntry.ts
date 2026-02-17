@@ -1,39 +1,47 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import type { DailyEntry, PreceptResponse, MeditationLog } from '../../shared/types'
 import { api } from '../lib/data/api'
 import { useAutoSave } from './useAutoSave'
-import type { DailyEntry, PreceptResponse, MeditationLog } from '../../shared/types'
 
-interface PendingSave {
-  responses: Map<number, { response: string | null; rating: number | null; promptText: string }>
-  meditation: { meditated: boolean; minutes: number; notes: string | null } | null
+interface ResponseUpdate {
+  preceptNumber: number
+  response: string | null
+  rating: number | null
+  promptText: string
+}
+
+interface MeditationUpdate {
+  meditated: boolean
+  minutes: number
+  notes: string | null
+}
+
+interface PendingSaves {
+  responses: Map<number, ResponseUpdate>
+  meditation: MeditationUpdate | null
+  version: number
 }
 
 export function useDailyEntry(date: string) {
   const [entry, setEntry] = useState<DailyEntry | null>(null)
   const [loading, setLoading] = useState(true)
-  const [pendingSave, setPendingSave] = useState<PendingSave>({
+  const [pendingSaves, setPendingSaves] = useState<PendingSaves>({
     responses: new Map(),
     meditation: null,
+    version: 0,
   })
+  const entryIdRef = useRef<number | null>(null)
 
-  // Track a serializable version of pendingSave for useAutoSave change detection
-  const [saveVersion, setSaveVersion] = useState(0)
-  const pendingSaveRef = useRef(pendingSave)
-  pendingSaveRef.current = pendingSave
-
-  // Load entry on mount or date change
+  // Load entry
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    setEntry(null)
-    setPendingSave({ responses: new Map(), meditation: null })
-    setSaveVersion(0)
 
     api.entry.getOrCreate(date).then((dailyEntry) => {
-      if (!cancelled) {
-        setEntry(dailyEntry)
-        setLoading(false)
-      }
+      if (cancelled) return
+      setEntry(dailyEntry)
+      entryIdRef.current = dailyEntry.entry.id
+      setLoading(false)
     })
 
     return () => {
@@ -41,80 +49,74 @@ export function useDailyEntry(date: string) {
     }
   }, [date])
 
-  // Save function that persists all pending changes
-  const savePending = useCallback(async () => {
-    const current = pendingSaveRef.current
-    if (!entry) return
+  // Save function
+  const savePending = useCallback(async (saves: PendingSaves) => {
+    const entryId = entryIdRef.current
+    if (!entryId) return
 
-    const promises: Promise<PreceptResponse | MeditationLog>[] = []
+    const promises: Promise<unknown>[] = []
 
-    current.responses.forEach((data, preceptNumber) => {
+    for (const update of saves.responses.values()) {
       promises.push(
         api.response.upsert(
-          entry.entry.id,
-          preceptNumber,
-          data.response,
-          data.rating,
-          data.promptText
+          entryId,
+          update.preceptNumber,
+          update.response,
+          update.rating,
+          update.promptText
         )
       )
-    })
+    }
 
-    if (current.meditation) {
+    if (saves.meditation) {
+      const m = saves.meditation
       promises.push(
-        api.meditation.upsert(
-          entry.entry.id,
-          current.meditation.meditated,
-          current.meditation.minutes,
-          current.meditation.notes
-        )
+        api.meditation.upsert(entryId, m.meditated, m.minutes, m.notes)
       )
     }
 
-    if (promises.length > 0) {
-      await Promise.all(promises)
-      // Clear pending state after successful save
-      setPendingSave({ responses: new Map(), meditation: null })
-    }
-  }, [entry])
+    await Promise.all(promises)
+  }, [])
 
-  const { saving, flush } = useAutoSave(saveVersion, savePending)
+  const { status } = useAutoSave(pendingSaves, savePending)
 
   const updateResponse = useCallback(
     (preceptNumber: number, response: string | null, rating: number | null, promptText: string) => {
-      // Update local state immediately for responsive UI
+      // Optimistic local update
       setEntry((prev) => {
         if (!prev) return prev
         const existing = prev.responses.find((r) => r.preceptNumber === preceptNumber)
-        const updatedResponses = existing
-          ? prev.responses.map((r) =>
-              r.preceptNumber === preceptNumber
-                ? { ...r, response, rating, promptText }
-                : r
-            )
-          : [
-              ...prev.responses,
-              {
-                id: 0,
-                entryId: prev.entry.id,
-                preceptNumber,
-                response,
-                rating,
-                promptText,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              },
-            ]
-        return { ...prev, responses: updatedResponses }
+        let newResponses: PreceptResponse[]
+        if (existing) {
+          newResponses = prev.responses.map((r) =>
+            r.preceptNumber === preceptNumber
+              ? { ...r, response, rating, promptText }
+              : r
+          )
+        } else {
+          newResponses = [
+            ...prev.responses,
+            {
+              id: -preceptNumber, // temporary id
+              entryId: prev.entry.id,
+              preceptNumber,
+              response,
+              rating,
+              promptText,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ]
+        }
+        return { ...prev, responses: newResponses }
       })
 
-      // Queue for debounced save
-      setPendingSave((prev) => {
-        const next = { ...prev, responses: new Map(prev.responses) }
-        next.responses.set(preceptNumber, { response, rating, promptText })
-        return next
+      // Queue save
+      setPendingSaves((prev) => {
+        const newMap = new Map(prev.responses)
+        newMap.set(preceptNumber, { preceptNumber, response, rating, promptText })
+        return { responses: newMap, meditation: prev.meditation, version: prev.version + 1 }
       })
-      setSaveVersion((v) => v + 1)
     },
     []
   )
@@ -123,17 +125,20 @@ export function useDailyEntry(date: string) {
     (meditated: boolean, minutes: number, notes: string | null) => {
       setEntry((prev) => {
         if (!prev) return prev
-        return {
-          ...prev,
-          meditation: { ...prev.meditation, meditated, minutes, notes },
+        const newMeditation: MeditationLog = {
+          ...prev.meditation,
+          meditated,
+          minutes,
+          notes,
         }
+        return { ...prev, meditation: newMeditation }
       })
 
-      setPendingSave((prev) => ({
-        ...prev,
+      setPendingSaves((prev) => ({
+        responses: prev.responses,
         meditation: { meditated, minutes, notes },
+        version: prev.version + 1,
       }))
-      setSaveVersion((v) => v + 1)
     },
     []
   )
@@ -141,8 +146,8 @@ export function useDailyEntry(date: string) {
   return {
     entry,
     loading,
-    saving,
-    flush,
+    saving: status === 'saving',
+    saveStatus: status,
     updateResponse,
     updateMeditation,
   }
