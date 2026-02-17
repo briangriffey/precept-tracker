@@ -1,7 +1,49 @@
+# Gas Town
 .runtime/
 .claude/
 .beads/
 .logs/
-
-.DS_Store
 state.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+.DS_Store
+
+# Coverage
+coverage
+*.lcov
+.nyc_output
+
+# Compiled binary addons
+build/Release
+
+# Dependencies
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional caches
+.npm
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# dotenv
+.env
+.env.test
+
+# Vite
+.vite/
+
+# Electron-Forge
+out/
