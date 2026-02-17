@@ -1,6 +1,8 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
+import { getDatabase, closeDatabase } from './database';
+import { registerIpcHandlers } from './ipc/handlers';
 
 if (started) {
   app.quit();
@@ -26,7 +28,15 @@ const createWindow = () => {
   }
 };
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+  getDatabase();
+  registerIpcHandlers();
+  createWindow();
+});
+
+app.on('before-quit', () => {
+  closeDatabase();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
