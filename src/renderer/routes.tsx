@@ -1,5 +1,7 @@
 import { createHashRouter, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
+import { OnboardingGuard } from './components/onboarding/OnboardingGuard';
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { TodayPage } from './pages/TodayPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { EntryDetailPage } from './pages/EntryDetailPage';
@@ -9,8 +11,16 @@ import { SettingsPage } from './pages/SettingsPage';
 
 export const router = createHashRouter([
   {
+    path: '/onboarding',
+    element: <OnboardingFlow />,
+  },
+  {
     path: '/',
-    element: <AppShell />,
+    element: (
+      <OnboardingGuard>
+        <AppShell />
+      </OnboardingGuard>
+    ),
     children: [
       { index: true, element: <Navigate to="/today" replace /> },
       { path: 'today', element: <TodayPage /> },

@@ -3,6 +3,7 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { getDatabase, closeDatabase } from './database';
 import { registerIpcHandlers } from './ipc/handlers';
+import { startReminderScheduler, stopReminderScheduler } from './notifications/reminder';
 
 if (started) {
   app.quit();
@@ -32,9 +33,11 @@ app.on('ready', () => {
   getDatabase();
   registerIpcHandlers();
   createWindow();
+  startReminderScheduler();
 });
 
 app.on('before-quit', () => {
+  stopReminderScheduler();
   closeDatabase();
 });
 

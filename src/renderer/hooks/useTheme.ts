@@ -1,43 +1,62 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-type Theme = 'light' | 'dark';
+export type ThemePreference = 'light' | 'dark' | 'system';
+type ResolvedTheme = 'light' | 'dark';
 
 const STORAGE_KEY = 'precept-tracker-theme';
 
-function getSystemTheme(): Theme {
+function getSystemTheme(): ResolvedTheme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function getStoredTheme(): Theme | null {
+function getStoredPreference(): ThemePreference {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
-  return null;
+  if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+  return 'system';
+}
+
+function resolve(preference: ThemePreference): ResolvedTheme {
+  return preference === 'system' ? getSystemTheme() : preference;
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    return getStoredTheme() ?? getSystemTheme();
-  });
+  const [preference, setPreference] = useState<ThemePreference>(getStoredPreference);
+  const [theme, setTheme] = useState<ResolvedTheme>(() => resolve(preference));
 
+  // Apply resolved theme to the DOM
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
+    const resolved = resolve(preference);
+    setTheme(resolved);
+    document.documentElement.setAttribute('data-theme', resolved);
+    localStorage.setItem(STORAGE_KEY, preference);
+  }, [preference]);
 
+  // Listen for OS theme changes when preference is 'system'
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e: MediaQueryListEvent) => {
-      if (!getStoredTheme()) {
-        setTheme(e.matches ? 'dark' : 'light');
+      if (preference === 'system') {
+        const resolved = e.matches ? 'dark' : 'light';
+        setTheme(resolved);
+        document.documentElement.setAttribute('data-theme', resolved);
       }
     };
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
+  }, [preference]);
+
+  const setThemePreference = useCallback((pref: ThemePreference) => {
+    setPreference(pref);
   }, []);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
+  const toggleTheme = useCallback(() => {
+    setPreference((prev) => {
+      if (prev === 'light') return 'dark';
+      if (prev === 'dark') return 'light';
+      // system -> toggle to opposite of current resolved
+      return getSystemTheme() === 'dark' ? 'light' : 'dark';
+    });
+  }, []);
 
-  return { theme, toggleTheme } as const;
+  return { theme, preference, toggleTheme, setThemePreference } as const;
 }
