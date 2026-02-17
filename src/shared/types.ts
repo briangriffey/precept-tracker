@@ -61,9 +61,17 @@ export interface DailyEntry {
 export interface WeeklySummary {
   weekStart: string
   weekEnd: string
-  daysCompleted: number
+  daysWithEntries: number
+  totalPrecepts: number
   totalMeditationMinutes: number
-  averageRatings: { preceptNumber: number; average: number }[]
+  daysWithMeditation: number
+  averageRatings: {
+    preceptNumber: number
+    average: number
+    count: number
+  }[]
+  topPrecepts: number[]
+  growthPrecepts: number[]
   reflection: WeeklyReflection | null
 }
 

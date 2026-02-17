@@ -3,6 +3,7 @@ import { PageTransition } from '../components/layout/PageTransition'
 import { DailyHeader } from '../components/journal/DailyHeader'
 import { CompletionMessage } from '../components/journal/CompletionMessage'
 import { StreakMilestone } from '../components/journal/StreakMilestone'
+import { WeeklyNudge } from '../components/journal/WeeklyNudge'
 import { useDailyEntry } from '../hooks/useDailyEntry'
 import { api } from '../lib/data/api'
 
@@ -27,6 +28,7 @@ export function TodayPage() {
   return (
     <PageTransition>
       <DailyHeader date={date} />
+      <WeeklyNudge date={new Date()} />
       <StreakMilestone currentStreak={streak} />
       {!loading && reflectedCount > 0 && (
         <CompletionMessage reflectedCount={reflectedCount} />
