@@ -5,6 +5,14 @@
 .logs/
 state.json
 
+# Dependencies
+node_modules/
+
+# Build output
+.vite/
+out/
+dist/
+
 # Logs
 logs
 *.log
@@ -15,6 +23,8 @@ pids
 *.pid
 *.seed
 *.pid.lock
+
+# OS
 .DS_Store
 
 # Coverage
@@ -22,11 +32,15 @@ coverage
 *.lcov
 .nyc_output
 
-# Compiled binary addons
-build/Release
+# Environment
+.env
+.env.local
+.env.test
 
-# Dependencies
-node_modules/
+# IDE
+.idea/
+*.swp
+*.swo
 
 # TypeScript
 *.tsbuildinfo
@@ -38,12 +52,8 @@ node_modules/
 # Output of 'npm pack'
 *.tgz
 
-# dotenv
-.env
-.env.test
-
-# Vite
-.vite/
+# Compiled binary addons
+build/Release
 
 # Electron-Forge
 out/
