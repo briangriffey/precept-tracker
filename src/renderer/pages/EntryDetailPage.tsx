@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { api } from '../lib/data/api'
 import { PageTransition } from '../components/layout/PageTransition'
 import { EntryReadView } from '../components/history/EntryReadView'

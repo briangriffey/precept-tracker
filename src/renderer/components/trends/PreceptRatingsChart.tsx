@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '../ui/Card'
-import { precepts, preceptGroups } from '../../lib/precepts'
+import { preceptGroups } from '../../lib/precepts'
 
 interface PreceptRatingsChartProps {
   data: { preceptNumber: number; average: number }[]

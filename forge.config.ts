@@ -9,6 +9,17 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { spawn } from 'child_process';
+import { rebuild } from '@electron/rebuild';
+
+function runShell(cmd: string, args: string[], cwd: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(cmd, args, { cwd, stdio: 'inherit', shell: true });
+    proc.on('close', (code) =>
+      code === 0 ? resolve() : reject(new Error(`${cmd} ${args.join(' ')} failed with code ${code}`)),
+    );
+    proc.on('error', reject);
+  });
+}
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -16,24 +27,16 @@ const config: ForgeConfig = {
     name: 'Precept Tracker',
     appBundleId: 'com.precepttracker.app',
     executableName: 'precept-tracker',
+    icon: './assets/icon',
   },
   rebuildConfig: {},
   hooks: {
     packageAfterPrune: async (_config, buildPath) => {
       // Workaround: Electron Forge's Vite plugin doesn't copy externalized
-      // native modules into the packaged output. Install them explicitly.
-      return new Promise<void>((resolve, reject) => {
-        const npmInstall = spawn('npm', ['install', '--no-save', 'better-sqlite3'], {
-          cwd: buildPath,
-          stdio: 'inherit',
-          shell: true,
-        });
-        npmInstall.on('close', (code) => {
-          if (code === 0) resolve();
-          else reject(new Error(`npm install of native modules failed with code ${code}`));
-        });
-        npmInstall.on('error', reject);
-      });
+      // native modules into the packaged output. Install and rebuild them
+      // against Electron's Node headers.
+      await runShell('npm', ['install', '--no-save', 'better-sqlite3'], buildPath);
+      await rebuild({ buildPath, electronVersion: '40.4.1' });
     },
   },
   makers: [

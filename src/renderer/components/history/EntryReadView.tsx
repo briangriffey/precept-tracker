@@ -1,5 +1,5 @@
 import React from 'react'
-import { preceptGroups, getPreceptByNumber } from '../../lib/precepts'
+import { preceptGroups } from '../../lib/precepts'
 import type { DailyEntry } from '../../../shared/types'
 
 interface EntryReadViewProps {

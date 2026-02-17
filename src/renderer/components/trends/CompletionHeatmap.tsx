@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { format, parseISO, startOfWeek, addDays, differenceInWeeks } from 'date-fns'
+import { format, startOfWeek, addDays, differenceInWeeks } from 'date-fns'
 import { Card } from '../ui/Card'
 import type { TimeRange } from '../../hooks/useTrendsData'
 

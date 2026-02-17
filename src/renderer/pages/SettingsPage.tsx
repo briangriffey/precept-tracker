@@ -66,7 +66,7 @@ const selectStyle: React.CSSProperties = {
 }
 
 export function SettingsPage() {
-  const { settings, loading, getSetting, setSetting } = useSettings()
+  const { loading, getSetting, setSetting } = useSettings()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [exportOpen, setExportOpen] = useState(false)
