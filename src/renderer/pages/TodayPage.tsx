@@ -4,7 +4,11 @@ import { DailyHeader } from '../components/journal/DailyHeader'
 import { CompletionMessage } from '../components/journal/CompletionMessage'
 import { StreakMilestone } from '../components/journal/StreakMilestone'
 import { WeeklyNudge } from '../components/journal/WeeklyNudge'
+import { JournalProgress } from '../components/journal/JournalProgress'
+import { PreceptGroupSection } from '../components/journal/PreceptGroupSection'
+import { MeditationTracker } from '../components/journal/MeditationTracker'
 import { useDailyEntry } from '../hooks/useDailyEntry'
+import { preceptGroups } from '../lib/precepts'
 import { api } from '../lib/data/api'
 
 function todayISO(): string {
@@ -14,7 +18,7 @@ function todayISO(): string {
 
 export function TodayPage() {
   const date = todayISO()
-  const { entry, loading } = useDailyEntry(date)
+  const { entry, loading, updateResponse, updateMeditation } = useDailyEntry(date)
   const [streak, setStreak] = useState(0)
 
   useEffect(() => {
@@ -33,9 +37,25 @@ export function TodayPage() {
       {!loading && reflectedCount > 0 && (
         <CompletionMessage reflectedCount={reflectedCount} />
       )}
-      <p style={{ color: 'var(--color-text-secondary)' }}>
-        Daily journal entry
-      </p>
+      {!loading && entry && (
+        <>
+          <JournalProgress completed={reflectedCount} total={16} />
+          {preceptGroups.map((group, i) => (
+            <PreceptGroupSection
+              key={group.name}
+              group={group}
+              date={date}
+              responses={entry.responses}
+              defaultOpen={i === 0}
+              onUpdate={updateResponse}
+            />
+          ))}
+          <MeditationTracker
+            meditation={entry.meditation}
+            onUpdate={updateMeditation}
+          />
+        </>
+      )}
     </PageTransition>
   )
 }
