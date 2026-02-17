@@ -1,52 +1,39 @@
-import { format } from 'date-fns'
+import { useState, useEffect } from 'react'
 import { PageTransition } from '../components/layout/PageTransition'
 import { DailyHeader } from '../components/journal/DailyHeader'
-import { JournalProgress } from '../components/journal/JournalProgress'
-import { PreceptGroupSection } from '../components/journal/PreceptGroupSection'
-import { MeditationTracker } from '../components/journal/MeditationTracker'
-import { preceptGroups } from '../lib/precepts'
+import { CompletionMessage } from '../components/journal/CompletionMessage'
+import { StreakMilestone } from '../components/journal/StreakMilestone'
 import { useDailyEntry } from '../hooks/useDailyEntry'
+import { api } from '../lib/data/api'
+
+function todayISO(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 export function TodayPage() {
-  const today = new Date()
-  const dateStr = format(today, 'yyyy-MM-dd')
-  const { entry, loading, saveStatus, updateResponse, updateMeditation } = useDailyEntry(dateStr)
+  const date = todayISO()
+  const { entry, loading } = useDailyEntry(date)
+  const [streak, setStreak] = useState(0)
 
-  if (loading || !entry) {
-    return (
-      <PageTransition>
-        <div style={{ padding: 'var(--spacing-2xl) 0', color: 'var(--color-text-muted)', textAlign: 'center' }}>
-          Loading...
-        </div>
-      </PageTransition>
-    )
-  }
+  useEffect(() => {
+    api.stats.streak().then((info) => setStreak(info.current))
+  }, [])
 
-  const completedCount = entry.responses.filter(
-    (r) => (r.response && r.response.trim().length > 0) || (r.rating && r.rating > 0)
-  ).length
+  const reflectedCount = entry
+    ? entry.responses.filter((r) => r.response || r.rating).length
+    : 0
 
   return (
     <PageTransition>
-      <DailyHeader date={today} saveStatus={saveStatus} />
-
-      <JournalProgress completed={completedCount} total={16} />
-
-      {preceptGroups.map((group, i) => (
-        <PreceptGroupSection
-          key={group.id}
-          group={group}
-          date={dateStr}
-          responses={entry.responses}
-          defaultOpen={i === 0}
-          onUpdate={updateResponse}
-        />
-      ))}
-
-      <MeditationTracker
-        meditation={entry.meditation}
-        onUpdate={updateMeditation}
-      />
+      <DailyHeader date={date} />
+      <StreakMilestone currentStreak={streak} />
+      {!loading && reflectedCount > 0 && (
+        <CompletionMessage reflectedCount={reflectedCount} />
+      )}
+      <p style={{ color: 'var(--color-text-secondary)' }}>
+        Daily journal entry
+      </p>
     </PageTransition>
   )
 }

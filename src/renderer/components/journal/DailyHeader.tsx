@@ -1,62 +1,53 @@
-import { format } from 'date-fns'
-import type { SaveStatus } from './types'
+import { motion } from 'framer-motion'
+import { animation } from '../../lib/design/tokens'
+import { getDailyGreeting } from '../../lib/encouragement'
 
 interface DailyHeaderProps {
-  date: Date
-  saveStatus: SaveStatus
+  date: string
 }
 
-const greetings = [
-  'Welcome to your practice.',
-  'A moment of stillness awaits.',
-  'Begin where you are.',
-  'Each day is a fresh start.',
-  'You showed up. That matters.',
-  'Breathe. Reflect. Grow.',
-  'Gentle attention, honest reflection.',
-]
+export function DailyHeader({ date }: DailyHeaderProps) {
+  const greeting = getDailyGreeting(date)
 
-function getGreeting(date: Date): string {
-  const dayOfYear = Math.floor(
-    (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
-  )
-  return greetings[dayOfYear % greetings.length]
-}
-
-export function DailyHeader({ date, saveStatus }: DailyHeaderProps) {
-  const headerStyle: React.CSSProperties = {
-    marginBottom: 'var(--spacing-xl)',
-  }
-
-  const dateStyle: React.CSSProperties = {
-    fontSize: 'var(--font-size-2xl)',
-    fontWeight: 300,
-    letterSpacing: '0.02em',
-    color: 'var(--color-text)',
-    margin: 0,
-  }
-
-  const greetingStyle: React.CSSProperties = {
-    fontSize: 'var(--font-size-base)',
-    color: 'var(--color-text-secondary)',
-    marginTop: 'var(--spacing-xs)',
-  }
-
-  const statusStyle: React.CSSProperties = {
-    fontSize: 'var(--font-size-sm)',
-    color: 'var(--color-text-muted)',
-    marginTop: 'var(--spacing-xs)',
-    transition: 'opacity 150ms ease',
-    opacity: saveStatus === 'idle' ? 0 : 1,
-  }
+  const formatted = new Date(date + 'T00:00:00').toLocaleDateString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 
   return (
-    <header style={headerStyle}>
-      <h1 style={dateStyle}>{format(date, 'EEEE, MMMM d')}</h1>
-      <p style={greetingStyle}>{getGreeting(date)}</p>
-      <p style={statusStyle}>
-        {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : ''}
+    <motion.header
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: animation.pageFade.duration,
+        ease: animation.pageFade.ease,
+      }}
+      style={{
+        marginBottom: 'var(--spacing-xl)',
+      }}
+    >
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 'var(--font-size-2xl)',
+          color: 'var(--color-text)',
+        }}
+      >
+        {formatted}
+      </h1>
+      <p
+        style={{
+          margin: 'var(--spacing-sm) 0 0',
+          fontSize: 'var(--font-size-base)',
+          color: 'var(--color-text-secondary)',
+          fontStyle: 'italic',
+          lineHeight: 1.6,
+        }}
+      >
+        {greeting}
       </p>
-    </header>
+    </motion.header>
   )
 }
