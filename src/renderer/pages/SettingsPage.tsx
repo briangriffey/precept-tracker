@@ -1,210 +1,211 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/layout/PageTransition'
-import { Card, Button, Toggle } from '../components/ui'
-import { PromptManager } from '../components/prompts/PromptManager'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Toggle } from '../components/ui/Toggle'
+import { ExportDialog } from '../components/export/ExportDialog'
 import { useSettings } from '../hooks/useSettings'
-import { useTheme, type ThemePreference } from '../hooks/useTheme'
+import { useTheme } from '../hooks/useTheme'
 
-const DAYS_OF_WEEK = [
-  'sunday',
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-] as const
-
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: 'var(--font-size-lg)',
-  color: 'var(--color-text)',
-  margin: '0 0 var(--spacing-md)',
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2
+      style={{
+        fontSize: 'var(--font-size-base)',
+        fontWeight: 600,
+        color: 'var(--color-text)',
+        margin: 0,
+        marginBottom: 'var(--spacing-md)',
+        paddingBottom: 'var(--spacing-xs)',
+        borderBottom: '1px solid var(--color-border-light)',
+      }}
+    >
+      {children}
+    </h2>
+  )
 }
 
-const settingRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: 'var(--spacing-sm) 0',
-}
-
-const settingLabelStyle: React.CSSProperties = {
-  fontSize: 'var(--font-size-base)',
-  color: 'var(--color-text)',
+function SettingRow({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 'var(--spacing-sm) 0',
+      }}
+    >
+      <span
+        style={{
+          fontSize: 'var(--font-size-base)',
+          color: 'var(--color-text)',
+        }}
+      >
+        {label}
+      </span>
+      <div>{children}</div>
+    </div>
+  )
 }
 
 const selectStyle: React.CSSProperties = {
-  padding: 'var(--spacing-xs) var(--spacing-sm)',
+  padding: '0.375rem 0.75rem',
   borderRadius: 'var(--radius-md)',
   border: '1px solid var(--color-border)',
   backgroundColor: 'var(--color-surface)',
   color: 'var(--color-text)',
   fontSize: 'var(--font-size-sm)',
-  minWidth: '120px',
-}
-
-const infoTextStyle: React.CSSProperties = {
-  fontSize: 'var(--font-size-sm)',
-  color: 'var(--color-text-muted)',
-  margin: 0,
+  cursor: 'pointer',
 }
 
 export function SettingsPage() {
-  const { settings, loading, setSetting } = useSettings()
-  const { preference, setThemePreference } = useTheme()
-  const [showPrompts, setShowPrompts] = useState(false)
+  const { settings, loading, getSetting, setSetting } = useSettings()
+  const { theme, toggleTheme } = useTheme()
+  const navigate = useNavigate()
+  const [exportOpen, setExportOpen] = useState(false)
 
   if (loading) {
     return (
       <PageTransition>
-        <h1 style={{ fontSize: 'var(--font-size-2xl)', color: 'var(--color-text)', margin: '0 0 var(--spacing-lg)' }}>
-          Settings
-        </h1>
-        <p style={infoTextStyle}>Loading...</p>
+        <div style={{ padding: 'var(--spacing-xl)', color: 'var(--color-text-secondary)' }}>
+          Loading settings...
+        </div>
       </PageTransition>
     )
   }
 
-  const reminderEnabled = settings.reminder_enabled !== 'false'
-  const reminderTime = settings.reminder_time ?? '20:00'
-  const weeklyDay = settings.weekly_reflection_day ?? 'sunday'
+  const reminderTime = getSetting('reminder_time') ?? '20:00'
+  const remindersEnabled = (getSetting('reminder_enabled') ?? 'true') === 'true'
+  const weeklyDay = getSetting('weekly_reflection_day') ?? 'sunday'
+  const themeSetting = getSetting('theme') ?? 'system'
 
   const handleThemeChange = (value: string) => {
-    const pref = value as ThemePreference
-    setThemePreference(pref)
-    setSetting('theme', pref)
-  }
-
-  const handleRestartOnboarding = async () => {
-    await setSetting('onboarding_complete', 'false')
-    window.location.hash = '#/onboarding'
+    setSetting('theme', value)
+    if (value === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const systemTheme = prefersDark ? 'dark' : 'light'
+      if (theme !== systemTheme) toggleTheme()
+      localStorage.removeItem('precept-tracker-theme')
+    } else if (value !== theme) {
+      toggleTheme()
+    }
   }
 
   return (
     <PageTransition>
-      <h1
-        style={{
-          fontSize: 'var(--font-size-2xl)',
-          color: 'var(--color-text)',
-          margin: '0 0 var(--spacing-xl)',
-        }}
-      >
-        Settings
-      </h1>
+      <div style={{ maxWidth: '36rem', margin: '0 auto' }}>
+        <h1
+          style={{
+            fontSize: 'var(--font-size-2xl)',
+            fontWeight: 600,
+            color: 'var(--color-text)',
+            margin: 0,
+            marginBottom: 'var(--spacing-xl)',
+          }}
+        >
+          Settings
+        </h1>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)', maxWidth: '640px' }}>
         {/* Practice */}
-        <Card>
-          <h2 style={sectionTitleStyle}>Practice</h2>
-
-          <div style={settingRowStyle}>
-            <span style={settingLabelStyle}>Daily reminder time</span>
+        <Card style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <SectionTitle>Practice</SectionTitle>
+          <SettingRow label="Daily reminder time">
             <input
               type="time"
               value={reminderTime}
               onChange={(e) => setSetting('reminder_time', e.target.value)}
-              style={{
-                ...selectStyle,
-                minWidth: '140px',
-              }}
+              style={selectStyle}
             />
-          </div>
-
-          <div style={settingRowStyle}>
-            <span style={settingLabelStyle}>Reminders enabled</span>
+          </SettingRow>
+          <SettingRow label="Reminders enabled">
             <Toggle
-              checked={reminderEnabled}
-              onChange={(checked) =>
-                setSetting('reminder_enabled', String(checked))
-              }
+              checked={remindersEnabled}
+              onChange={(v) => setSetting('reminder_enabled', v ? 'true' : 'false')}
             />
-          </div>
-
-          <div style={settingRowStyle}>
-            <span style={settingLabelStyle}>Weekly reflection day</span>
+          </SettingRow>
+          <SettingRow label="Weekly reflection day">
             <select
               value={weeklyDay}
-              onChange={(e) =>
-                setSetting('weekly_reflection_day', e.target.value)
-              }
+              onChange={(e) => setSetting('weekly_reflection_day', e.target.value)}
               style={selectStyle}
             >
-              {DAYS_OF_WEEK.map((day) => (
-                <option key={day} value={day}>
-                  {day.charAt(0).toUpperCase() + day.slice(1)}
-                </option>
-              ))}
+              <option value="sunday">Sunday</option>
+              <option value="monday">Monday</option>
+              <option value="tuesday">Tuesday</option>
+              <option value="wednesday">Wednesday</option>
+              <option value="thursday">Thursday</option>
+              <option value="friday">Friday</option>
+              <option value="saturday">Saturday</option>
             </select>
-          </div>
+          </SettingRow>
         </Card>
 
         {/* Prompts */}
-        <Card>
-          <h2 style={sectionTitleStyle}>Prompts</h2>
-          {showPrompts ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPrompts(false)}
-                style={{ marginBottom: 'var(--spacing-md)' }}
-              >
-                &larr; Back to settings
-              </Button>
-              <PromptManager />
-            </>
-          ) : (
-            <Button
-              variant="secondary"
-              onClick={() => setShowPrompts(true)}
-            >
-              Customize prompts &rarr;
-            </Button>
-          )}
+        <Card style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <SectionTitle>Prompts</SectionTitle>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => navigate('/settings/prompts')}
+          >
+            Customize prompts
+          </Button>
         </Card>
 
         {/* Appearance */}
-        <Card>
-          <h2 style={sectionTitleStyle}>Appearance</h2>
-          <div style={settingRowStyle}>
-            <span style={settingLabelStyle}>Theme</span>
+        <Card style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <SectionTitle>Appearance</SectionTitle>
+          <SettingRow label="Theme">
             <select
-              value={preference}
+              value={themeSetting}
               onChange={(e) => handleThemeChange(e.target.value)}
               style={selectStyle}
             >
+              <option value="system">System</option>
               <option value="light">Light</option>
               <option value="dark">Dark</option>
-              <option value="system">System</option>
             </select>
-          </div>
+          </SettingRow>
         </Card>
 
         {/* Data */}
-        <Card>
-          <h2 style={sectionTitleStyle}>Data</h2>
-          <p style={infoTextStyle}>
-            Database location: ~/Library/Application Support/precept-tracker/
-          </p>
+        <Card style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <SectionTitle>Data</SectionTitle>
+          <div style={{ marginBottom: 'var(--spacing-sm)' }}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setExportOpen(true)}
+            >
+              Export journal
+            </Button>
+          </div>
         </Card>
 
         {/* About */}
-        <Card>
-          <h2 style={sectionTitleStyle}>About</h2>
+        <Card style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <SectionTitle>About</SectionTitle>
           <p
             style={{
-              fontSize: 'var(--font-size-base)',
-              color: 'var(--color-text)',
-              margin: '0 0 var(--spacing-md)',
+              margin: 0,
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-text-secondary)',
+              marginBottom: 'var(--spacing-sm)',
             }}
           >
             Precept Tracker v1.0.0
           </p>
-          <Button variant="secondary" size="sm" onClick={handleRestartOnboarding}>
-            Restart onboarding
-          </Button>
         </Card>
       </div>
+
+      <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
     </PageTransition>
   )
 }

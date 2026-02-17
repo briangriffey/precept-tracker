@@ -26,4 +26,6 @@ export const IPC = {
   STATS_MEDITATION_TREND: 'stats:meditationTrend',
   STATS_HEATMAP: 'stats:heatmap',
   STATS_AVERAGE_RATINGS: 'stats:averageRatings',
+  // Export
+  EXPORT_JOURNAL: 'export:journal',
 } as const

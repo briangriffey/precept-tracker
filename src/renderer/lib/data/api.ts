@@ -8,6 +8,8 @@ import type {
   CustomPrompt,
   Setting,
   StreakInfo,
+  ExportRequest,
+  ExportResult,
 } from '../../../shared/types'
 
 interface AppApi {
@@ -61,6 +63,9 @@ interface AppApi {
       startDate: string,
       endDate: string
     ) => Promise<{ preceptNumber: number; average: number }[]>
+  }
+  export: {
+    journal: (request: ExportRequest) => Promise<ExportResult>
   }
 }
 

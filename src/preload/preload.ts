@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc-channels'
+import type { ExportRequest } from '../shared/types'
 
 contextBridge.exposeInMainWorld('api', {
   entry: {
@@ -75,5 +76,9 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke(IPC.STATS_HEATMAP, days),
     averageRatings: (startDate: string, endDate: string) =>
       ipcRenderer.invoke(IPC.STATS_AVERAGE_RATINGS, startDate, endDate),
+  },
+  export: {
+    journal: (request: ExportRequest) =>
+      ipcRenderer.invoke(IPC.EXPORT_JOURNAL, request),
   },
 })

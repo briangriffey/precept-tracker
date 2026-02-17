@@ -80,3 +80,22 @@ export interface StreakInfo {
   longest: number
   lastEntryDate: string | null
 }
+
+// Export types
+
+export type ExportFormat = 'markdown' | 'json'
+
+export interface ExportRequest {
+  dateRange: 'all' | 'custom'
+  startDate?: string // YYYY-MM-DD, required when dateRange is 'custom'
+  endDate?: string   // YYYY-MM-DD, required when dateRange is 'custom'
+  format: ExportFormat
+  includeMeditation: boolean
+}
+
+export interface ExportResult {
+  success: boolean
+  filePath?: string
+  entryCount?: number
+  error?: string
+}

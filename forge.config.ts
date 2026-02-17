@@ -1,5 +1,6 @@
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
+import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
@@ -13,6 +14,8 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     name: 'Precept Tracker',
+    appBundleId: 'com.precepttracker.app',
+    executableName: 'precept-tracker',
   },
   rebuildConfig: {},
   hooks: {
@@ -34,10 +37,32 @@ const config: ForgeConfig = {
     },
   },
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      name: 'PreceptTracker',
+      setupExe: 'PreceptTrackerSetup.exe',
+    }),
+    new MakerDMG({
+      name: 'Precept Tracker',
+      format: 'ULFO',
+    }),
     new MakerZIP({}, ['darwin']),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerDeb({
+      options: {
+        name: 'precept-tracker',
+        productName: 'Precept Tracker',
+        genericName: 'Journal',
+        description: 'Daily Zen journal for reflecting on the 16 Precepts of Soto Zen Buddhism',
+        categories: ['Utility'],
+      },
+    }),
+    new MakerRpm({
+      options: {
+        name: 'precept-tracker',
+        productName: 'Precept Tracker',
+        description: 'Daily Zen journal for reflecting on the 16 Precepts of Soto Zen Buddhism',
+        categories: ['Utility'],
+      },
+    }),
   ],
   plugins: [
     new AutoUnpackNativesPlugin({}),

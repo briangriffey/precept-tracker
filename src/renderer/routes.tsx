@@ -8,6 +8,7 @@ import { EntryDetailPage } from './pages/EntryDetailPage';
 import { TrendsPage } from './pages/TrendsPage';
 import { WeeklyPage } from './pages/WeeklyPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { PromptsPage } from './pages/PromptsPage';
 
 export const router = createHashRouter([
   {
@@ -29,6 +30,7 @@ export const router = createHashRouter([
       { path: 'trends', element: <TrendsPage /> },
       { path: 'weekly', element: <WeeklyPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/prompts', element: <PromptsPage /> },
     ],
   },
 ]);

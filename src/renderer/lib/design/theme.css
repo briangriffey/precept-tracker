@@ -15,6 +15,12 @@
   --color-border-light: #F0EDE8;
   --color-shadow: rgba(0, 0, 0, 0.06);
 
+  /* Feedback */
+  --color-success: #16a34a;
+  --color-success-bg: rgba(34, 197, 94, 0.1);
+  --color-error: #dc2626;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+
   /* Typography */
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --font-size-sm: 0.875rem;
@@ -56,4 +62,8 @@
   --color-border: #3A3A40;
   --color-border-light: #2E2E33;
   --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-success: #4ade80;
+  --color-success-bg: rgba(74, 222, 128, 0.15);
+  --color-error: #f87171;
+  --color-error-bg: rgba(248, 113, 113, 0.15);
 }
